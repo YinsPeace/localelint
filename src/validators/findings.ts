@@ -16,7 +16,12 @@ export type FindingKind =
   | "plural-missing-category"
   | "plural-extra-category"
   | "needs-translation"
-  | "needs-review";
+  | "needs-review"
+  | "migration-lost-translation"
+  | "migration-lost-plural-category"
+  | "migration-comment-drift"
+  | "migration-placeholder-corrupted"
+  | "migration-extra-key";
 
 export interface Finding {
   /** Translation unit key this finding is about. */

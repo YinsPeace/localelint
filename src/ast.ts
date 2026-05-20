@@ -19,6 +19,9 @@ export type TranslationState =
 export type SourceFormat =
   | "ios-xliff"
   | "xcstrings"
+  | "ios-strings"
+  | "ios-stringsdict"
+  | "ios-lproj"
   | "angular-xliff"
   | "android-xml"
   | "flutter-arb"
