@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 http://docs.oasis-open.org/xliff/v1.2/os/xliff-core-1.2-strict.xsd">
+  <file source-language="en" target-language="de" datatype="plaintext" original="BookNook/Localizable.xcstrings">
+    <header>
+      <tool tool-id="com.apple.dt.xcode" tool-name="Xcode" tool-version="15.0" build-num="15A240d"/>
+    </header>
+    <body>
+      <trans-unit id="action.add.book" xml:space="preserve">
+        <source>Add Book</source>
+        <target state="translated">Buch hinzufügen</target>
+        <note from="developer">Button to add a new book to library</note>
+      </trans-unit>
+      <trans-unit id="action.continue.reading" xml:space="preserve">
+        <source>Continue Reading</source>
+        <target state="translated">Weiterlesen</target>
+        <note from="developer">Button to continue reading the current book</note>
+      </trans-unit>
+      <trans-unit id="book.read.percent" xml:space="preserve">
+        <source>%@ read</source>
+        <target state="translated">%@ gelesen</target>
+        <note from="developer">Reading progress label. %@ is a percentage like 42%.</note>
+      </trans-unit>
+      <trans-unit id="error.network.message" xml:space="preserve">
+        <source>Please check your internet connection and try again.</source>
+        <target state="translated">Bitte überprüfe deine Internetverbindung und versuche es erneut.</target>
+        <note from="developer">Detail message shown with the network error dialog</note>
+      </trans-unit>
+      <trans-unit id="error.network.title" xml:space="preserve">
+        <source>Connection Lost</source>
+        <target state="translated">Verbindung verloren</target>
+        <note from="developer">Title of error dialog shown when network request fails</note>
+      </trans-unit>
+      <trans-unit id="search.placeholder" xml:space="preserve">
+        <source>Search books...</source>
+        <target state="translated">Bücher suchen…</target>
+        <note from="developer">Placeholder in search field</note>
+      </trans-unit>
+      <trans-unit id="settings.title" xml:space="preserve">
+        <source>Settings</source>
+        <target state="translated">Einstellungen</target>
+      </trans-unit>
+      <trans-unit id="share.with.friends" xml:space="preserve">
+        <source>Share %1$@ with %2$@</source>
+        <target state="translated">%1$@ mit %2$@ teilen</target>
+        <note from="developer">Share a book recommendation. %1$@ is the book title, %2$@ is the friend's name.</note>
+      </trans-unit>
+      <trans-unit id="user.greeting" xml:space="preserve">
+        <source>Hello, %@!</source>
+        <target state="translated">Hallo, %@!</target>
+        <note from="developer">Personalized greeting. %@ is the user's first name.</note>
+      </trans-unit>
+      <trans-unit id="welcome.title" xml:space="preserve">
+        <source>Welcome to BookNook</source>
+        <target state="translated">Willkommen bei BookNook</target>
+        <note from="developer">Title shown on app launch screen</note>
+      </trans-unit>
+      <trans-unit id="cart.empty.message" xml:space="preserve">
+        <source>Your cart is empty. Browse our books to find something you'll love.</source>
+        <target state="needs-translation"></target>
+        <note from="developer">Shown when shopping cart is empty</note>
+      </trans-unit>
+      <trans-unit id="onboarding.step.welcome" xml:space="preserve">
+        <source>Welcome aboard! Let's get you set up.</source>
+        <target state="new"></target>
+        <note from="developer">First screen of onboarding flow</note>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

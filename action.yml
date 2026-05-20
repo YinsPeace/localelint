@@ -1,0 +1,36 @@
+name: "LocaleLint"
+description: "Localization CI for iOS apps. Validates XLIFF and Xcode String Catalog files for missing translations, placeholder mismatches, and CLDR plural coverage."
+author: "YinsPeace"
+
+inputs:
+  files:
+    description: "Newline or comma separated paths to .xliff, .xlf, or .xcstrings files. Glob patterns not supported in v1."
+    required: true
+  fail-on-warning:
+    description: "Fail the action if any warning-severity findings are present. Default fails only on errors."
+    required: false
+    default: "false"
+  post-comment:
+    description: "Post findings as a PR comment. No-op outside pull_request events."
+    required: false
+    default: "true"
+  github-token:
+    description: "GitHub token for posting PR comments. Defaults to GITHUB_TOKEN."
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  errors:
+    description: "Count of error-severity findings across all checked files."
+  warnings:
+    description: "Count of warning-severity findings across all checked files."
+  info:
+    description: "Count of info-severity findings across all checked files."
+
+runs:
+  using: "node20"
+  main: "action/dist/index.js"
+
+branding:
+  icon: "check-circle"
+  color: "purple"
