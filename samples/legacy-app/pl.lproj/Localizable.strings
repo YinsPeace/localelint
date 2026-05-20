@@ -1,0 +1,11 @@
+/* Welcome screen title */
+"welcome.title" = "Witamy w QuickNotes";
+
+/* Greeting with user name. %@ is the user's first name. */
+"user.greeting" = "Cześć, %@!";
+
+/* Action button */
+"action.new.note" = "Nowa notatka";
+
+/* Empty state message */
+"notes.empty.message" = "Brak notatek. Dotknij +, aby zacząć pisać.";

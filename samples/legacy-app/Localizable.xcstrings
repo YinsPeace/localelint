@@ -1,0 +1,89 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "action.new.note" : {
+      "comment" : "Action button",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : { "state" : "translated", "value" : "Neue Notiz" }
+        },
+        "en" : {
+          "stringUnit" : { "state" : "translated", "value" : "New Note" }
+        },
+        "pl" : {
+          "stringUnit" : { "state" : "translated", "value" : "Nowa notatka" }
+        }
+      }
+    },
+    "notes.count" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : { "stringUnit" : { "state" : "translated", "value" : "%lld note" } },
+              "other" : { "stringUnit" : { "state" : "translated", "value" : "%lld notes" } }
+            }
+          }
+        },
+        "pl" : {
+          "variations" : {
+            "plural" : {
+              "few" : { "stringUnit" : { "state" : "translated", "value" : "%lld notatki" } },
+              "many" : { "stringUnit" : { "state" : "translated", "value" : "%lld notatek" } },
+              "one" : { "stringUnit" : { "state" : "translated", "value" : "%lld notatka" } },
+              "other" : { "stringUnit" : { "state" : "translated", "value" : "%lld notatki" } }
+            }
+          }
+        }
+      }
+    },
+    "notes.empty.message" : {
+      "comment" : "Empty state message",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : { "state" : "translated", "value" : "Noch keine Notizen. Tippe auf +, um zu schreiben." }
+        },
+        "en" : {
+          "stringUnit" : { "state" : "translated", "value" : "No notes yet. Tap + to start writing." }
+        },
+        "pl" : {
+          "stringUnit" : { "state" : "translated", "value" : "Brak notatek. Dotknij +, aby zacząć pisać." }
+        }
+      }
+    },
+    "user.greeting" : {
+      "comment" : "Greeting with user name. %@ is the user's first name.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : { "state" : "translated", "value" : "Hallo, %@!" }
+        },
+        "en" : {
+          "stringUnit" : { "state" : "translated", "value" : "Hello, %@!" }
+        },
+        "pl" : {
+          "stringUnit" : { "state" : "translated", "value" : "Cześć, %@!" }
+        }
+      }
+    },
+    "welcome.title" : {
+      "comment" : "Welcome screen title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : { "state" : "translated", "value" : "Willkommen bei QuickNotes" }
+        },
+        "en" : {
+          "stringUnit" : { "state" : "translated", "value" : "Welcome to QuickNotes" }
+        },
+        "pl" : {
+          "stringUnit" : { "state" : "translated", "value" : "Witamy w QuickNotes" }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
