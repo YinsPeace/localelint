@@ -38,8 +38,9 @@ jobs:
     needs: test
     steps:
       - uses: actions/checkout@v4
-      - name: Run LocaleLint on its own samples
+      - name: Run LocaleLint on its own samples (3 deliberate Arabic placeholder errors expected)
         id: localelint
+        continue-on-error: true
         uses: ./
         with:
           files: |
