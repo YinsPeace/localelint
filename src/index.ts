@@ -41,6 +41,55 @@ async function main(argv: string[]): Promise<number> {
     return findings.some((f) => f.severity === "error") ? 1 : 0;
   }
 
+  if (command === "migrate") {
+    const jsonMode = rest.includes("--json");
+    const positional = rest.filter((arg) => !arg.startsWith("--"));
+    const [lprojDir, xcstringsPath] = positional;
+    if (!lprojDir || !xcstringsPath) {
+      console.error("usage: localelint migrate <lproj-dir> <file.xcstrings> [--json]");
+      return 1;
+    }
+
+    const { runMigrate } = await import("./commands/migrate.js");
+    const result = await runMigrate(lprojDir, xcstringsPath);
+
+    if (jsonMode) {
+      console.log(JSON.stringify(result, null, 2));
+    } else {
+      console.log(
+        `legacy: ${result.legacy.unitCount} units, locales ${result.legacy.targetLocales.join(", ")}`,
+      );
+      console.log(
+        `catalog: ${result.catalog.unitCount} units, locales ${result.catalog.targetLocales.join(", ")}`,
+      );
+      if (result.findings.length === 0) {
+        console.log("");
+        console.log("no migration drift detected.");
+      } else {
+        const byLocale = new Map<string, typeof result.findings>();
+        for (const f of result.findings) {
+          const list = byLocale.get(f.locale) ?? [];
+          list.push(f);
+          byLocale.set(f.locale, list);
+        }
+        for (const [locale, list] of [...byLocale.entries()].sort()) {
+          console.log("");
+          console.log(`[${locale}] ${list.length} finding(s):`);
+          for (const f of list) {
+            const sev = f.severity === "error" ? "ERR " : f.severity === "warning" ? "WARN" : "INFO";
+            console.log(`  ${sev} ${f.kind.padEnd(32)} ${f.key}: ${f.message}`);
+          }
+        }
+        console.log("");
+        const errors = result.findings.filter((f) => f.severity === "error").length;
+        const warnings = result.findings.filter((f) => f.severity === "warning").length;
+        console.log(`${errors} error(s), ${warnings} warning(s)`);
+      }
+    }
+
+    return result.findings.some((f) => f.severity === "error") ? 1 : 0;
+  }
+
   console.error(`unknown command: ${command}`);
   printHelp();
   return 2;
@@ -113,12 +162,14 @@ function printHelp(): void {
 localelint, localization CI for iOS apps
 
 usage:
-  localelint check <file> [--json]    Parse and validate a file
-  localelint --help                   Show this help
+  localelint check <file> [--json]                          Parse and validate a file
+  localelint migrate <lproj-dir> <file.xcstrings> [--json]  Validate Xcode auto-migration
+  localelint --help                                         Show this help
 
 supported formats in v1:
   iOS XLIFF 1.2 (.xliff, .xlf)
   Xcode String Catalog (.xcstrings)
+  Legacy iOS (.strings + .stringsdict) for migrate command
 
 exit codes:
   0  no errors
