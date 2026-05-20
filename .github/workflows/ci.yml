@@ -53,3 +53,28 @@ jobs:
           echo "errors=${{ steps.localelint.outputs.errors }}"
           echo "warnings=${{ steps.localelint.outputs.warnings }}"
           echo "info=${{ steps.localelint.outputs.info }}"
+
+  dogfood-migrate:
+    name: Self-test migrate mode against legacy-app fixtures
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Run LocaleLint migrate on legacy-app (clean), expected 0 findings"
+        uses: ./
+        with:
+          mode: migrate
+          lproj-dir: samples/legacy-app
+          files: samples/legacy-app/Localizable.xcstrings
+          fail-on-warning: false
+          post-comment: ${{ github.event_name == 'pull_request' }}
+      - name: "Run LocaleLint migrate on legacy-app (lossy), expected 5+ findings"
+        id: lossy
+        continue-on-error: true
+        uses: ./
+        with:
+          mode: migrate
+          lproj-dir: samples/legacy-app
+          files: samples/legacy-app/Localizable-lossy.xcstrings
+          fail-on-warning: false
+          post-comment: false
