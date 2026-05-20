@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  test:
+    name: typecheck, test, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: npm run build:action
+      - name: Verify action/dist/index.js is up to date with source
+        run: |
+          if [ -n "$(git status --porcelain action/dist/)" ]; then
+            echo "::error::action/dist/ is out of date. Run 'npm run build:action' locally and commit."
+            git diff action/dist/
+            exit 1
+          fi
+
+  dogfood:
+    name: Self-test the action against committed samples
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run LocaleLint on its own samples
+        id: localelint
+        uses: ./
+        with:
+          files: |
+            samples/booknook.xcstrings
+            samples/booknook-de.xliff
+          fail-on-warning: false
+          post-comment: ${{ github.event_name == 'pull_request' }}
+      - name: Echo outputs
+        run: |
+          echo "errors=${{ steps.localelint.outputs.errors }}"
+          echo "warnings=${{ steps.localelint.outputs.warnings }}"
+          echo "info=${{ steps.localelint.outputs.info }}"
