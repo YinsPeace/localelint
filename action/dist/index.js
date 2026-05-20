@@ -32504,6 +32504,244 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
+/***/ 5413:
+/***/ ((__unused_webpack_module, __webpack_exports__, __nccwpck_require__) => {
+
+/* harmony export */ __nccwpck_require__.d(__webpack_exports__, {
+/* harmony export */   r: () => (/* binding */ parseXcstrings)
+/* harmony export */ });
+/* unused harmony export parseXcstringsString */
+/* harmony import */ var node_fs_promises__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(1455);
+/* harmony import */ var node_fs_promises__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__nccwpck_require__.n(node_fs_promises__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _ast_js__WEBPACK_IMPORTED_MODULE_1__ = __nccwpck_require__(2631);
+/* harmony import */ var _validators_placeholders_js__WEBPACK_IMPORTED_MODULE_2__ = __nccwpck_require__(9861);
+/**
+ * Xcode String Catalog (`.xcstrings`) adapter.
+ *
+ * Parses Xcode 15+ `.xcstrings` JSON files into a LocalizationAST.
+ *
+ * Phase A scope: parse the top-level `strings` map, source string,
+ * localizations per locale, basic plural variants. Defer device variants
+ * and substitution variants until real samples reveal their shape.
+ */
+
+
+
+async function parseXcstrings(filePath) {
+    const json = await (0,node_fs_promises__WEBPACK_IMPORTED_MODULE_0__.readFile)(filePath, "utf8");
+    return parseXcstringsString(json, filePath);
+}
+function parseXcstringsString(json, filePath) {
+    const raw = JSON.parse(json);
+    const sourceLocale = raw.sourceLanguage;
+    const ast = (0,_ast_js__WEBPACK_IMPORTED_MODULE_1__/* .emptyAST */ .A)(sourceLocale, "xcstrings");
+    for (const [key, entry] of Object.entries(raw.strings)) {
+        const sourceVariant = entry.localizations?.[sourceLocale];
+        const sourceText = extractSourceText(key, sourceVariant);
+        const unit = {
+            key,
+            source: sourceText,
+            sourceLocale,
+            placeholders: (0,_validators_placeholders_js__WEBPACK_IMPORTED_MODULE_2__/* .detectPlaceholders */ .y)(sourceText),
+            notes: entry.comment ? [{ from: "developer", content: entry.comment }] : [],
+            isPlural: hasPlural(sourceVariant),
+            targets: new Map(),
+            origin: { format: "xcstrings", filePath },
+        };
+        for (const [locale, localization] of Object.entries(entry.localizations ?? {})) {
+            if (locale === sourceLocale)
+                continue;
+            const variants = toVariants(localization);
+            unit.targets.set(locale, { locale, variants });
+            ast.targetLocales.add(locale);
+        }
+        ast.units.push(unit);
+    }
+    ast.metadata.unitCount = ast.units.length;
+    return ast;
+}
+function extractSourceText(key, sourceVariant) {
+    if (!sourceVariant) {
+        // In .xcstrings the key is often the source string itself; treat it as source if no localization exists.
+        return key;
+    }
+    if (sourceVariant.stringUnit) {
+        return sourceVariant.stringUnit.value;
+    }
+    if (sourceVariant.variations?.plural) {
+        // Use the "other" plural form as canonical source for placeholder detection.
+        return sourceVariant.variations.plural.other?.stringUnit.value ?? key;
+    }
+    return key;
+}
+function hasPlural(localization) {
+    return Boolean(localization?.variations?.plural);
+}
+function toVariants(localization) {
+    if (localization.stringUnit) {
+        return [
+            {
+                value: localization.stringUnit.value,
+                state: toState(localization.stringUnit.state),
+            },
+        ];
+    }
+    if (localization.variations?.plural) {
+        const variants = [];
+        for (const [category, entry] of Object.entries(localization.variations.plural)) {
+            if (!entry)
+                continue;
+            variants.push({
+                pluralCategory: category,
+                value: entry.stringUnit.value,
+                state: toState(entry.stringUnit.state),
+            });
+        }
+        return variants;
+    }
+    return [{ value: null, state: "new" }];
+}
+function toState(raw) {
+    switch (raw) {
+        case "translated":
+            return "translated";
+        case "needs_review":
+            return "needs-review";
+        case "stale":
+            return "stale";
+        case "new":
+        default:
+            return "new";
+    }
+}
+
+
+/***/ }),
+
+/***/ 2631:
+/***/ ((__unused_webpack_module, __webpack_exports__, __nccwpck_require__) => {
+
+/* harmony export */ __nccwpck_require__.d(__webpack_exports__, {
+/* harmony export */   A: () => (/* binding */ emptyAST)
+/* harmony export */ });
+/**
+ * Generic localization AST.
+ *
+ * Format-agnostic representation of localization resources. All parsers
+ * (iOS XLIFF, Xcode .xcstrings, Angular XLIFF, etc.) produce this shape;
+ * all validators operate on it. v2+ formats add adapters without touching
+ * the validators.
+ */
+/**
+ * Helper: construct an empty AST shell. Adapters populate it.
+ */
+function emptyAST(sourceLocale, format) {
+    return {
+        units: [],
+        targetLocales: new Set(),
+        sourceLocale,
+        metadata: {
+            formats: [format],
+            unitCount: 0,
+            parsedAt: new Date(),
+        },
+    };
+}
+
+
+/***/ }),
+
+/***/ 9861:
+/***/ ((__unused_webpack_module, __webpack_exports__, __nccwpck_require__) => {
+
+/* harmony export */ __nccwpck_require__.d(__webpack_exports__, {
+/* harmony export */   I: () => (/* binding */ comparePlaceholders),
+/* harmony export */   y: () => (/* binding */ detectPlaceholders)
+/* harmony export */ });
+/**
+ * Placeholder detection.
+ *
+ * Scans a string for printf-style format specifiers (`%@`, `%d`, `%1$@`),
+ * ICU message-format placeholders (`{name}`, `{count, plural, ...}`), and
+ * named token patterns.
+ *
+ * Phase A scope: printf + named ICU. Defer full ICU MessageFormat parsing
+ * until validators need it (Phase B `check` work).
+ */
+// printf format: %[positional$][flags][width][.precision][length]<conversion>
+// length modifiers (hh, ll must come before h, l in alternation due to longest-match):
+const PRINTF_REGEX = /%(?:(\d+)\$)?[+-]?\d*\.?\d*(?:hh|ll|h|l|q|j|z|t|L)?[@dDiouxXeEfFgGsScCaA]/g;
+const ICU_NAMED_REGEX = /\{([a-zA-Z_][a-zA-Z0-9_]*)\}/g;
+function detectPlaceholders(source) {
+    const found = [];
+    for (const match of source.matchAll(PRINTF_REGEX)) {
+        if (match.index === undefined)
+            continue;
+        const token = match[0];
+        const positional = match[1];
+        found.push({
+            token,
+            offset: match.index,
+            type: (positional ? "positional" : "printf"),
+            positionalIndex: positional ? Number.parseInt(positional, 10) : undefined,
+        });
+    }
+    for (const match of source.matchAll(ICU_NAMED_REGEX)) {
+        if (match.index === undefined)
+            continue;
+        found.push({
+            token: match[0],
+            offset: match.index,
+            type: "named",
+        });
+    }
+    return found.sort((a, b) => a.offset - b.offset);
+}
+/**
+ * Compare placeholders in source vs target. Returns a list of mismatches.
+ *
+ * Mismatch criteria:
+ * - target is missing a token present in source
+ * - target has a token not present in source (extra)
+ * - positional token indices differ between source and target
+ */
+function comparePlaceholders(sourcePlaceholders, targetPlaceholders) {
+    const mismatches = [];
+    const sourceTokens = new Map();
+    for (const p of sourcePlaceholders) {
+        sourceTokens.set(p.token, (sourceTokens.get(p.token) ?? 0) + 1);
+    }
+    const targetTokens = new Map();
+    for (const p of targetPlaceholders) {
+        targetTokens.set(p.token, (targetTokens.get(p.token) ?? 0) + 1);
+    }
+    for (const [token, sourceCount] of sourceTokens) {
+        const targetCount = targetTokens.get(token) ?? 0;
+        if (targetCount < sourceCount) {
+            mismatches.push({
+                kind: "missing",
+                token,
+                sourceCount,
+                targetCount,
+            });
+        }
+    }
+    for (const [token, targetCount] of targetTokens) {
+        if (!sourceTokens.has(token)) {
+            mismatches.push({
+                kind: "extra",
+                token,
+                sourceCount: 0,
+                targetCount,
+            });
+        }
+    }
+    return mismatches;
+}
+
+
+/***/ }),
+
 /***/ 2613:
 /***/ ((module) => {
 
@@ -32606,6 +32844,27 @@ module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:crypto"
 /***/ ((module) => {
 
 module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:events");
+
+/***/ }),
+
+/***/ 3024:
+/***/ ((module) => {
+
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:fs");
+
+/***/ }),
+
+/***/ 1455:
+/***/ ((module) => {
+
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:fs/promises");
+
+/***/ }),
+
+/***/ 6760:
+/***/ ((module) => {
+
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:path");
 
 /***/ }),
 
@@ -34366,10 +34625,127 @@ module.exports = parseParams
 /******/ 	return module.exports;
 /******/ }
 /******/ 
+/******/ // expose the modules object (__webpack_modules__)
+/******/ __nccwpck_require__.m = __webpack_modules__;
+/******/ 
 /************************************************************************/
+/******/ /* webpack/runtime/compat get default export */
+/******/ (() => {
+/******/ 	// getDefaultExport function for compatibility with non-harmony modules
+/******/ 	__nccwpck_require__.n = (module) => {
+/******/ 		var getter = module && module.__esModule ?
+/******/ 			() => (module['default']) :
+/******/ 			() => (module);
+/******/ 		__nccwpck_require__.d(getter, { a: getter });
+/******/ 		return getter;
+/******/ 	};
+/******/ })();
+/******/ 
+/******/ /* webpack/runtime/define property getters */
+/******/ (() => {
+/******/ 	// define getter functions for harmony exports
+/******/ 	__nccwpck_require__.d = (exports, definition) => {
+/******/ 		for(var key in definition) {
+/******/ 			if(__nccwpck_require__.o(definition, key) && !__nccwpck_require__.o(exports, key)) {
+/******/ 				Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
+/******/ 			}
+/******/ 		}
+/******/ 	};
+/******/ })();
+/******/ 
+/******/ /* webpack/runtime/ensure chunk */
+/******/ (() => {
+/******/ 	__nccwpck_require__.f = {};
+/******/ 	// This file contains only the entry chunk.
+/******/ 	// The chunk loading function for additional chunks
+/******/ 	__nccwpck_require__.e = (chunkId) => {
+/******/ 		return Promise.all(Object.keys(__nccwpck_require__.f).reduce((promises, key) => {
+/******/ 			__nccwpck_require__.f[key](chunkId, promises);
+/******/ 			return promises;
+/******/ 		}, []));
+/******/ 	};
+/******/ })();
+/******/ 
+/******/ /* webpack/runtime/get javascript chunk filename */
+/******/ (() => {
+/******/ 	// This function allow to reference async chunks
+/******/ 	__nccwpck_require__.u = (chunkId) => {
+/******/ 		// return url for filenames based on template
+/******/ 		return "" + chunkId + ".index.js";
+/******/ 	};
+/******/ })();
+/******/ 
+/******/ /* webpack/runtime/hasOwnProperty shorthand */
+/******/ (() => {
+/******/ 	__nccwpck_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ })();
+/******/ 
 /******/ /* webpack/runtime/compat */
 /******/ 
 /******/ if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = new URL('.', import.meta.url).pathname.slice(import.meta.url.match(/^file:\/\/\/\w:/) ? 1 : 0, -1) + "/";
+/******/ 
+/******/ /* webpack/runtime/import chunk loading */
+/******/ (() => {
+/******/ 	// no baseURI
+/******/ 	
+/******/ 	// object to store loaded and loading chunks
+/******/ 	// undefined = chunk not loaded, null = chunk preloaded/prefetched
+/******/ 	// [resolve, Promise] = chunk loading, 0 = chunk loaded
+/******/ 	var installedChunks = {
+/******/ 		792: 0
+/******/ 	};
+/******/ 	
+/******/ 	var installChunk = (data) => {
+/******/ 		var {ids, modules, runtime} = data;
+/******/ 		// add "modules" to the modules object,
+/******/ 		// then flag all "ids" as loaded and fire callback
+/******/ 		var moduleId, chunkId, i = 0;
+/******/ 		for(moduleId in modules) {
+/******/ 			if(__nccwpck_require__.o(modules, moduleId)) {
+/******/ 				__nccwpck_require__.m[moduleId] = modules[moduleId];
+/******/ 			}
+/******/ 		}
+/******/ 		if(runtime) runtime(__nccwpck_require__);
+/******/ 		for(;i < ids.length; i++) {
+/******/ 			chunkId = ids[i];
+/******/ 			if(__nccwpck_require__.o(installedChunks, chunkId) && installedChunks[chunkId]) {
+/******/ 				installedChunks[chunkId][0]();
+/******/ 			}
+/******/ 			installedChunks[ids[i]] = 0;
+/******/ 		}
+/******/ 	
+/******/ 	}
+/******/ 	
+/******/ 	__nccwpck_require__.f.j = (chunkId, promises) => {
+/******/ 			// import() chunk loading for javascript
+/******/ 			var installedChunkData = __nccwpck_require__.o(installedChunks, chunkId) ? installedChunks[chunkId] : undefined;
+/******/ 			if(installedChunkData !== 0) { // 0 means "already installed".
+/******/ 	
+/******/ 				// a Promise means "currently loading".
+/******/ 				if(installedChunkData) {
+/******/ 					promises.push(installedChunkData[1]);
+/******/ 				} else {
+/******/ 					if(true) { // all chunks have JS
+/******/ 						// setup Promise in chunk cache
+/******/ 						var promise = import("./" + __nccwpck_require__.u(chunkId)).then(installChunk, (e) => {
+/******/ 							if(installedChunks[chunkId] !== 0) installedChunks[chunkId] = undefined;
+/******/ 							throw e;
+/******/ 						});
+/******/ 						var promise = Promise.race([promise, new Promise((resolve) => (installedChunkData = installedChunks[chunkId] = [resolve]))])
+/******/ 						promises.push(installedChunkData[1] = promise);
+/******/ 					}
+/******/ 				}
+/******/ 			}
+/******/ 	};
+/******/ 	
+/******/ 	// no prefetching
+/******/ 	
+/******/ 	// no preloaded
+/******/ 	
+/******/ 	// no external install chunk
+/******/ 	
+/******/ 	// no on chunks loaded
+/******/ })();
 /******/ 
 /************************************************************************/
 var __webpack_exports__ = {};
@@ -34378,218 +34754,16 @@ var __webpack_exports__ = {};
 var core = __nccwpck_require__(7484);
 // EXTERNAL MODULE: ./node_modules/@actions/github/lib/github.js
 var github = __nccwpck_require__(3228);
-;// CONCATENATED MODULE: external "node:fs/promises"
-const promises_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:fs/promises");
-;// CONCATENATED MODULE: ./src/ast.ts
-/**
- * Generic localization AST.
- *
- * Format-agnostic representation of localization resources. All parsers
- * (iOS XLIFF, Xcode .xcstrings, Angular XLIFF, etc.) produce this shape;
- * all validators operate on it. v2+ formats add adapters without touching
- * the validators.
- */
-/**
- * Helper: construct an empty AST shell. Adapters populate it.
- */
-function emptyAST(sourceLocale, format) {
-    return {
-        units: [],
-        targetLocales: new Set(),
-        sourceLocale,
-        metadata: {
-            formats: [format],
-            unitCount: 0,
-            parsedAt: new Date(),
-        },
-    };
-}
-
-;// CONCATENATED MODULE: ./src/validators/placeholders.ts
-/**
- * Placeholder detection.
- *
- * Scans a string for printf-style format specifiers (`%@`, `%d`, `%1$@`),
- * ICU message-format placeholders (`{name}`, `{count, plural, ...}`), and
- * named token patterns.
- *
- * Phase A scope: printf + named ICU. Defer full ICU MessageFormat parsing
- * until validators need it (Phase B `check` work).
- */
-// printf format: %[positional$][flags][width][.precision][length]<conversion>
-// length modifiers (hh, ll must come before h, l in alternation due to longest-match):
-const PRINTF_REGEX = /%(?:(\d+)\$)?[+-]?\d*\.?\d*(?:hh|ll|h|l|q|j|z|t|L)?[@dDiouxXeEfFgGsScCaA]/g;
-const ICU_NAMED_REGEX = /\{([a-zA-Z_][a-zA-Z0-9_]*)\}/g;
-function detectPlaceholders(source) {
-    const found = [];
-    for (const match of source.matchAll(PRINTF_REGEX)) {
-        if (match.index === undefined)
-            continue;
-        const token = match[0];
-        const positional = match[1];
-        found.push({
-            token,
-            offset: match.index,
-            type: (positional ? "positional" : "printf"),
-            positionalIndex: positional ? Number.parseInt(positional, 10) : undefined,
-        });
-    }
-    for (const match of source.matchAll(ICU_NAMED_REGEX)) {
-        if (match.index === undefined)
-            continue;
-        found.push({
-            token: match[0],
-            offset: match.index,
-            type: "named",
-        });
-    }
-    return found.sort((a, b) => a.offset - b.offset);
-}
-/**
- * Compare placeholders in source vs target. Returns a list of mismatches.
- *
- * Mismatch criteria:
- * - target is missing a token present in source
- * - target has a token not present in source (extra)
- * - positional token indices differ between source and target
- */
-function comparePlaceholders(sourcePlaceholders, targetPlaceholders) {
-    const mismatches = [];
-    const sourceTokens = new Map();
-    for (const p of sourcePlaceholders) {
-        sourceTokens.set(p.token, (sourceTokens.get(p.token) ?? 0) + 1);
-    }
-    const targetTokens = new Map();
-    for (const p of targetPlaceholders) {
-        targetTokens.set(p.token, (targetTokens.get(p.token) ?? 0) + 1);
-    }
-    for (const [token, sourceCount] of sourceTokens) {
-        const targetCount = targetTokens.get(token) ?? 0;
-        if (targetCount < sourceCount) {
-            mismatches.push({
-                kind: "missing",
-                token,
-                sourceCount,
-                targetCount,
-            });
-        }
-    }
-    for (const [token, targetCount] of targetTokens) {
-        if (!sourceTokens.has(token)) {
-            mismatches.push({
-                kind: "extra",
-                token,
-                sourceCount: 0,
-                targetCount,
-            });
-        }
-    }
-    return mismatches;
-}
-
-;// CONCATENATED MODULE: ./src/adapters/xcstrings.ts
-/**
- * Xcode String Catalog (`.xcstrings`) adapter.
- *
- * Parses Xcode 15+ `.xcstrings` JSON files into a LocalizationAST.
- *
- * Phase A scope: parse the top-level `strings` map, source string,
- * localizations per locale, basic plural variants. Defer device variants
- * and substitution variants until real samples reveal their shape.
- */
-
-
-
-async function parseXcstrings(filePath) {
-    const json = await (0,promises_namespaceObject.readFile)(filePath, "utf8");
-    return parseXcstringsString(json, filePath);
-}
-function parseXcstringsString(json, filePath) {
-    const raw = JSON.parse(json);
-    const sourceLocale = raw.sourceLanguage;
-    const ast = emptyAST(sourceLocale, "xcstrings");
-    for (const [key, entry] of Object.entries(raw.strings)) {
-        const sourceVariant = entry.localizations?.[sourceLocale];
-        const sourceText = extractSourceText(key, sourceVariant);
-        const unit = {
-            key,
-            source: sourceText,
-            sourceLocale,
-            placeholders: detectPlaceholders(sourceText),
-            notes: entry.comment ? [{ from: "developer", content: entry.comment }] : [],
-            isPlural: hasPlural(sourceVariant),
-            targets: new Map(),
-            origin: { format: "xcstrings", filePath },
-        };
-        for (const [locale, localization] of Object.entries(entry.localizations ?? {})) {
-            if (locale === sourceLocale)
-                continue;
-            const variants = toVariants(localization);
-            unit.targets.set(locale, { locale, variants });
-            ast.targetLocales.add(locale);
-        }
-        ast.units.push(unit);
-    }
-    ast.metadata.unitCount = ast.units.length;
-    return ast;
-}
-function extractSourceText(key, sourceVariant) {
-    if (!sourceVariant) {
-        // In .xcstrings the key is often the source string itself; treat it as source if no localization exists.
-        return key;
-    }
-    if (sourceVariant.stringUnit) {
-        return sourceVariant.stringUnit.value;
-    }
-    if (sourceVariant.variations?.plural) {
-        // Use the "other" plural form as canonical source for placeholder detection.
-        return sourceVariant.variations.plural.other?.stringUnit.value ?? key;
-    }
-    return key;
-}
-function hasPlural(localization) {
-    return Boolean(localization?.variations?.plural);
-}
-function toVariants(localization) {
-    if (localization.stringUnit) {
-        return [
-            {
-                value: localization.stringUnit.value,
-                state: toState(localization.stringUnit.state),
-            },
-        ];
-    }
-    if (localization.variations?.plural) {
-        const variants = [];
-        for (const [category, entry] of Object.entries(localization.variations.plural)) {
-            if (!entry)
-                continue;
-            variants.push({
-                pluralCategory: category,
-                value: entry.stringUnit.value,
-                state: toState(entry.stringUnit.state),
-            });
-        }
-        return variants;
-    }
-    return [{ value: null, state: "new" }];
-}
-function toState(raw) {
-    switch (raw) {
-        case "translated":
-            return "translated";
-        case "needs_review":
-            return "needs-review";
-        case "stale":
-            return "stale";
-        case "new":
-        default:
-            return "new";
-    }
-}
-
+// EXTERNAL MODULE: ./src/adapters/xcstrings.ts
+var xcstrings = __nccwpck_require__(5413);
+// EXTERNAL MODULE: external "node:fs/promises"
+var promises_ = __nccwpck_require__(1455);
 // EXTERNAL MODULE: ./node_modules/fast-xml-parser/src/fxp.js
 var fxp = __nccwpck_require__(9741);
+// EXTERNAL MODULE: ./src/ast.ts
+var src_ast = __nccwpck_require__(2631);
+// EXTERNAL MODULE: ./src/validators/placeholders.ts
+var placeholders = __nccwpck_require__(9861);
 ;// CONCATENATED MODULE: ./src/adapters/xliff.ts
 /**
  * iOS XLIFF (1.2) adapter.
@@ -34605,7 +34779,7 @@ var fxp = __nccwpck_require__(9741);
 
 
 async function parseXliff(filePath) {
-    const xml = await (0,promises_namespaceObject.readFile)(filePath, "utf8");
+    const xml = await (0,promises_.readFile)(filePath, "utf8");
     return parseXliffString(xml, filePath);
 }
 function parseXliffString(xml, filePath) {
@@ -34624,7 +34798,7 @@ function parseXliffString(xml, filePath) {
     }
     const fileArray = Array.isArray(files) ? files : [files];
     const sourceLocale = fileArray[0]?.["@_source-language"] ?? "en";
-    const ast = emptyAST(sourceLocale, "ios-xliff");
+    const ast = (0,src_ast/* emptyAST */.A)(sourceLocale, "ios-xliff");
     const unitsByKey = new Map();
     for (const file of fileArray) {
         const targetLocale = file["@_target-language"];
@@ -34644,7 +34818,7 @@ function parseXliffString(xml, filePath) {
                     key,
                     source,
                     sourceLocale,
-                    placeholders: detectPlaceholders(source),
+                    placeholders: (0,placeholders/* detectPlaceholders */.y)(source),
                     notes: extractNotes(tu.note),
                     isPlural: false,
                     targets: new Map(),
@@ -34805,8 +34979,8 @@ function checkPlaceholderMismatches(ast) {
             for (const variant of target.variants) {
                 if (!variant.value)
                     continue;
-                const targetPlaceholders = detectPlaceholders(variant.value);
-                const mismatches = comparePlaceholders(unit.placeholders, targetPlaceholders);
+                const targetPlaceholders = (0,placeholders/* detectPlaceholders */.y)(variant.value);
+                const mismatches = (0,placeholders/* comparePlaceholders */.I)(unit.placeholders, targetPlaceholders);
                 for (const mm of mismatches) {
                     const pluralSuffix = variant.pluralCategory ? ` (plural: ${variant.pluralCategory})` : "";
                     const kind = mm.kind === "missing" ? "placeholder-missing" : "placeholder-extra";
@@ -34941,12 +35115,57 @@ async function run() {
         const failOnWarning = core.getBooleanInput("fail-on-warning");
         const postComment = core.getBooleanInput("post-comment");
         const token = core.getInput("github-token");
+        const mode = (core.getInput("mode") || "check").toLowerCase();
+        const lprojDir = core.getInput("lproj-dir");
         const files = filesInput
             .split(/[\n,]/)
             .map((f) => f.trim())
             .filter(Boolean);
         if (files.length === 0) {
             core.warning("No input files provided.");
+            return;
+        }
+        if (mode === "migrate") {
+            if (!lprojDir) {
+                core.setFailed("migrate mode requires `lproj-dir` input");
+                return;
+            }
+            if (files.length !== 1) {
+                core.setFailed("migrate mode requires exactly one .xcstrings file in `files`");
+                return;
+            }
+            const xcstringsPath = files[0];
+            const { runMigrate } = await __nccwpck_require__.e(/* import() */ 879).then(__nccwpck_require__.bind(__nccwpck_require__, 5879));
+            const result = await runMigrate(lprojDir, xcstringsPath);
+            const findings = result.findings;
+            for (const f of findings) {
+                const annotation = { file: xcstringsPath, title: `${f.kind} (${f.locale})` };
+                if (f.severity === "error")
+                    core.error(`[${f.locale}] ${f.key}: ${f.message}`, annotation);
+                else if (f.severity === "warning")
+                    core.warning(`[${f.locale}] ${f.key}: ${f.message}`, annotation);
+                else
+                    core.notice(`[${f.locale}] ${f.key}: ${f.message}`, annotation);
+            }
+            const totals = countSeveritiesFlat(findings);
+            core.setOutput("errors", String(totals.error));
+            core.setOutput("warnings", String(totals.warning));
+            core.setOutput("info", String(totals.info));
+            core.info("");
+            core.info(`LocaleLint migrate summary: ${totals.error} error(s), ${totals.warning} warning(s), ${totals.info} info`);
+            if (postComment && token && github.context.payload.pull_request) {
+                try {
+                    await postOrUpdateMigrationComment(token, lprojDir, xcstringsPath, findings);
+                }
+                catch (err) {
+                    const msg = err instanceof Error ? err.message : String(err);
+                    core.warning(`Failed to post PR comment: ${msg}`);
+                }
+            }
+            if (totals.error > 0 || (failOnWarning && totals.warning > 0)) {
+                core.setFailed(`LocaleLint migrate found ${totals.error} error(s)` +
+                    (failOnWarning && totals.warning > 0 ? ` and ${totals.warning} warning(s)` : ""));
+            }
             return;
         }
         const results = [];
@@ -35003,7 +35222,7 @@ async function parseFile(filePath) {
         return parseXliff(filePath);
     }
     if (filePath.endsWith(".xcstrings")) {
-        return parseXcstrings(filePath);
+        return (0,xcstrings/* parseXcstrings */.r)(filePath);
     }
     throw new Error(`unknown format for ${filePath}`);
 }
@@ -35049,6 +35268,12 @@ function formatComment(results) {
 function escapePipe(s) {
     return s.replace(/\|/g, "\\|");
 }
+function countSeveritiesFlat(findings) {
+    const counts = { error: 0, warning: 0, info: 0 };
+    for (const f of findings)
+        counts[f.severity]++;
+    return counts;
+}
 async function postOrUpdateComment(token, results) {
     const octokit = github.getOctokit(token);
     const { owner, repo } = github.context.repo;
@@ -35078,6 +35303,44 @@ async function postOrUpdateComment(token, results) {
             issue_number: pr.number,
             body,
         });
+    }
+}
+async function postOrUpdateMigrationComment(token, lprojDir, xcstringsPath, findings) {
+    const octokit = github.getOctokit(token);
+    const { owner, repo } = github.context.repo;
+    const pr = github.context.payload.pull_request;
+    if (!pr)
+        return;
+    const totals = countSeveritiesFlat(findings);
+    let body = `${COMMENT_MARKER}\n## LocaleLint migrate\n\n`;
+    body += `Validating \`${xcstringsPath}\` against legacy \`${lprojDir}\`\n\n`;
+    body += `**${totals.error} error(s) · ${totals.warning} warning(s) · ${totals.info} info**\n\n`;
+    if (findings.length === 0) {
+        body += "No migration drift detected.\n";
+    }
+    else {
+        body += "| Severity | Locale | Key | Kind | Message |\n";
+        body += "|---|---|---|---|---|\n";
+        for (const f of findings.slice(0, 50)) {
+            body += `| ${f.severity.toUpperCase()} | \`${f.locale}\` | \`${f.key}\` | \`${f.kind}\` | ${f.message.replace(/\|/g, "\\|")} |\n`;
+        }
+        if (findings.length > 50) {
+            body += `\n_...and ${findings.length - 50} more. Full output in action logs._\n`;
+        }
+    }
+    body += "\n<sub>Generated by LocaleLint</sub>\n";
+    const { data: comments } = await octokit.rest.issues.listComments({
+        owner,
+        repo,
+        issue_number: pr.number,
+        per_page: 100,
+    });
+    const existing = comments.find((c) => c.body?.includes(COMMENT_MARKER));
+    if (existing) {
+        await octokit.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+    }
+    else {
+        await octokit.rest.issues.createComment({ owner, repo, issue_number: pr.number, body });
     }
 }
 run();

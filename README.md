@@ -61,6 +61,8 @@ jobs:
 Inputs:
 
 - `files` (required): newline or comma separated paths to `.xliff`, `.xlf`, or `.xcstrings` files.
+- `mode` (default `check`): either `check` (validates one or more files) or `migrate` (compares an lproj directory against an .xcstrings catalog).
+- `lproj-dir` (required in `migrate` mode): path to the legacy `.lproj` directory tree.
 - `fail-on-warning` (default `false`): fail the action on warnings, not just errors.
 - `post-comment` (default `true`): post findings as a single PR comment, updated on each push.
 - `github-token` (default `${{ github.token }}`): used to post comments.
@@ -68,6 +70,19 @@ Inputs:
 Outputs:
 
 - `errors`, `warnings`, `info`: counts.
+
+### Migrate mode
+
+```yaml
+- uses: YinsPeace/localelint@v0
+  with:
+    mode: migrate
+    lproj-dir: MyApp/Localizations
+    files: MyApp/Localizable.xcstrings
+    fail-on-warning: false
+```
+
+Migrate mode validates that Xcode's auto-migration from legacy `.strings` + `.stringsdict` to a String Catalog did not silently lose translations, plural categories, comments, or corrupt placeholders.
 
 ## Project structure
 

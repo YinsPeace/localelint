@@ -6,6 +6,13 @@ inputs:
   files:
     description: "Newline or comma separated paths to .xliff, .xlf, or .xcstrings files. Glob patterns not supported in v1."
     required: true
+  mode:
+    description: "Either 'check' (default, validates one or more files) or 'migrate' (compares an lproj directory against an .xcstrings catalog)."
+    required: false
+    default: "check"
+  lproj-dir:
+    description: "Path to the legacy .lproj directory tree. Required when mode is 'migrate'."
+    required: false
   fail-on-warning:
     description: "Fail the action if any warning-severity findings are present. Default fails only on errors."
     required: false
