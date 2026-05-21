@@ -51,9 +51,7 @@ jobs:
           xcodebuild \
             -project Fixture.xcodeproj \
             -exportLocalizations \
-            -localizationPath ./exports \
-            -includeScreenshots NO \
-            CODE_SIGNING_ALLOWED=NO
+            -localizationPath ./exports
 
       - name: Show .xcloc bundles produced
         run: |
