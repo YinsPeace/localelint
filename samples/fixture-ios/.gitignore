@@ -1,0 +1,6 @@
+# xcodegen-generated, not committed
+Fixture.xcodeproj/
+# build output
+build/
+exports/
+DerivedData/

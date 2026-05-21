@@ -1,0 +1,102 @@
+name: Generate iOS Localization Samples
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    name: Build fixture-ios on macos-latest and export localizations
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: samples/fixture-ios
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show selected Xcode
+        run: |
+          xcodebuild -version
+          xcrun simctl list runtimes | head -20
+
+      - name: Install xcodegen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project from project.yml
+        run: xcodegen generate
+
+      - name: Build the app (sanity check)
+        run: |
+          xcodebuild \
+            -project Fixture.xcodeproj \
+            -scheme Fixture \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination "generic/platform=iOS Simulator" \
+            CODE_SIGNING_ALLOWED=NO \
+            build | xcbeautify || xcodebuild \
+            -project Fixture.xcodeproj \
+            -scheme Fixture \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination "generic/platform=iOS Simulator" \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Export localizations to ./exports
+        run: |
+          mkdir -p exports
+          xcodebuild \
+            -project Fixture.xcodeproj \
+            -exportLocalizations \
+            -localizationPath ./exports \
+            -includeScreenshots NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Show .xcloc bundles produced
+        run: |
+          echo "=== .xcloc bundles ==="
+          ls -la exports/
+          echo ""
+          echo "=== contents of one bundle ==="
+          for d in exports/*.xcloc; do
+            echo "--- $d ---"
+            find "$d" -type f | head -20
+          done
+
+      - name: Print Localizable.xcstrings (verify state strings)
+        run: |
+          echo "=== Localizable.xcstrings (raw JSON) ==="
+          cat Sources/Fixture/Localizable.xcstrings | head -200
+          echo ""
+          echo "=== state values appearing in the catalog ==="
+          grep -oE '"state"\s*:\s*"[^"]+"' Sources/Fixture/Localizable.xcstrings | sort -u || true
+
+      - name: Print exported XLIFF (verify version + note attributes)
+        run: |
+          echo "=== first XLIFF inside each .xcloc ==="
+          for d in exports/*.xcloc; do
+            xliff=$(find "$d" -name "*.xliff" | head -1)
+            if [ -n "$xliff" ]; then
+              echo "--- $xliff ---"
+              head -40 "$xliff"
+              echo "..."
+              echo "[note elements with from attribute]"
+              grep -oE '<note[^/]*from="[^"]+"' "$xliff" | sort -u || echo "(none with from attribute)"
+              echo "[plain note elements]"
+              grep -oE '<note[^>]*>' "$xliff" | sort -u | head -10 || echo "(no <note> elements)"
+              echo ""
+            fi
+          done
+
+      - name: Upload exports as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fixture-ios-localization-exports
+          path: |
+            samples/fixture-ios/exports/
+            samples/fixture-ios/Sources/Fixture/Localizable.xcstrings
+          if-no-files-found: error
+          retention-days: 30

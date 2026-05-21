@@ -1,0 +1,149 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "action.new.note" : {
+      "comment" : "Button to add a new book to library",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : { "state" : "translated", "value" : "Neue Notiz" }
+        },
+        "en" : {
+          "stringUnit" : { "state" : "translated", "value" : "New Note" }
+        },
+        "fr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Nouvelle note" }
+        },
+        "ja" : {
+          "stringUnit" : { "state" : "translated", "value" : "新しいメモ" }
+        },
+        "pl" : {
+          "stringUnit" : { "state" : "translated", "value" : "Nowa notatka" }
+        }
+      }
+    },
+    "notes.count %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : { "stringUnit" : { "state" : "translated", "value" : "%lld Notiz" } },
+              "other" : { "stringUnit" : { "state" : "translated", "value" : "%lld Notizen" } }
+            }
+          }
+        },
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : { "stringUnit" : { "state" : "translated", "value" : "%lld note" } },
+              "other" : { "stringUnit" : { "state" : "translated", "value" : "%lld notes" } }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : { "stringUnit" : { "state" : "translated", "value" : "%lld note" } },
+              "other" : { "stringUnit" : { "state" : "translated", "value" : "%lld notes" } }
+            }
+          }
+        },
+        "ja" : {
+          "stringUnit" : { "state" : "translated", "value" : "%lld件のメモ" }
+        },
+        "pl" : {
+          "variations" : {
+            "plural" : {
+              "few" : { "stringUnit" : { "state" : "translated", "value" : "%lld notatki" } },
+              "many" : { "stringUnit" : { "state" : "translated", "value" : "%lld notatek" } },
+              "one" : { "stringUnit" : { "state" : "translated", "value" : "%lld notatka" } },
+              "other" : { "stringUnit" : { "state" : "translated", "value" : "%lld notatki" } }
+            }
+          }
+        }
+      }
+    },
+    "settings.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : { "state" : "translated", "value" : "Einstellungen" }
+        },
+        "en" : {
+          "stringUnit" : { "state" : "translated", "value" : "Settings" }
+        },
+        "fr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Réglages" }
+        },
+        "ja" : {
+          "stringUnit" : { "state" : "translated", "value" : "設定" }
+        },
+        "pl" : {
+          "stringUnit" : { "state" : "translated", "value" : "Ustawienia" }
+        }
+      }
+    },
+    "share.with.friends %1$@ %2$@" : {
+      "comment" : "Share a book recommendation. %1$@ is the book title, %2$@ is the friend's name.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : { "state" : "translated", "value" : "%1$@ mit %2$@ teilen" }
+        },
+        "en" : {
+          "stringUnit" : { "state" : "translated", "value" : "Share %1$@ with %2$@" }
+        },
+        "fr" : {
+          "stringUnit" : { "state" : "needs_review", "value" : "Partager %1$@ avec %2$@" }
+        },
+        "ja" : {
+          "stringUnit" : { "state" : "translated", "value" : "%2$@に%1$@を共有" }
+        }
+      }
+    },
+    "user.greeting %@" : {
+      "comment" : "Personalized greeting. %@ is the user's first name.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : { "state" : "translated", "value" : "Hallo, %@!" }
+        },
+        "en" : {
+          "stringUnit" : { "state" : "translated", "value" : "Hello, %@!" }
+        },
+        "fr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Bonjour, %@ !" }
+        },
+        "ja" : {
+          "stringUnit" : { "state" : "translated", "value" : "%@さん、こんにちは！" }
+        },
+        "pl" : {
+          "stringUnit" : { "state" : "translated", "value" : "Cześć, %@!" }
+        }
+      }
+    },
+    "welcome.title" : {
+      "comment" : "Title shown on app launch screen",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : { "state" : "translated", "value" : "Willkommen bei Fixture" }
+        },
+        "en" : {
+          "stringUnit" : { "state" : "translated", "value" : "Welcome to Fixture" }
+        },
+        "fr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Bienvenue sur Fixture" }
+        },
+        "ja" : {
+          "stringUnit" : { "state" : "translated", "value" : "Fixtureへようこそ" }
+        },
+        "pl" : {
+          "stringUnit" : { "state" : "new", "value" : "" }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
