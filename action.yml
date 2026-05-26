@@ -1,5 +1,5 @@
 name: "LocaleLint"
-description: "Localization CI for iOS apps. Validates XLIFF and Xcode String Catalog files for missing translations, placeholder mismatches, and CLDR plural coverage."
+description: "Localization CI for iOS: validates String Catalog and XLIFF files for missing translations, placeholders, and plurals."
 author: "YinsPeace"
 
 inputs:
