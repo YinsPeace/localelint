@@ -4,7 +4,7 @@ Localization CI for iOS apps. Validates XLIFF and Xcode String Catalog (`.xcstri
 
 ## Status
 
-Phase B (MVP). Pre-publish.
+Available. CLI and GitHub Action published; v0.2.1 is live on the [GitHub Marketplace](https://github.com/marketplace/actions/localelint).
 
 ## Validators in v1
 
